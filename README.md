@@ -1,4 +1,4 @@
-# Quantum-Enhanced Adaptive Urban Traffic Optimization 🚦⚛️
+# Quantum-Enhanced Adaptive Urban Traffic Optimization 
 
 An experimental traffic-signal optimization platform that combines **urban traffic simulation, QUBO modeling, Ising Hamiltonians, and QAOA** to investigate adaptive signal control under changing traffic conditions.
 
@@ -21,7 +21,7 @@ These decisions are encoded as binary variables and assembled into a **QUBO (Qua
 
 The QUBO is then transformed into an **Ising Hamiltonian** and passed to a **QAOA circuit implemented with Qiskit Aer**.
 
-The resulting system can be evaluated against a classical rule-based controller using metrics such as:
+The system can be evaluated against a classical rule-based controller using metrics including:
 
 * Average waiting time
 * Queue length
@@ -43,47 +43,47 @@ The resulting system can be evaluated against a classical rule-based controller 
                     │ phase / emergency data   │
                     └────────────┬─────────────┘
                                  │
-                  ┌──────────────▼──────────────┐
-                  │     Traffic Controller      │
-                  └──────────────┬──────────────┘
+                    ┌────────────▼─────────────┐
+                    │    Traffic Controller    │
+                    └────────────┬─────────────┘
                                  │
-              ┌──────────────────┴──────────────────┐
-              │                                     │
-      ┌───────▼────────┐                   ┌────────▼────────┐
-      │ Classical      │                   │ Quantum         │
-      │ Rule-Based     │                   │ QAOA Controller │
-      │ Controller     │                   │                 │
-      └───────┬────────┘                   └────────┬────────┘
-              │                                     │
-              │                            ┌────────▼────────┐
-              │                            │ Traffic Cost     │
-              │                            │ Model            │
-              │                            └────────┬────────┘
-              │                                     │
-              │                            ┌────────▼────────┐
-              │                            │ QUBO Builder     │
-              │                            └────────┬────────┘
-              │                                     │
-              │                            ┌────────▼────────┐
-              │                            │ QUBO → Ising     │
-              │                            └────────┬────────┘
-              │                                     │
-              │                            ┌────────▼────────┐
-              │                            │ QAOA / Qiskit    │
-              │                            │ Aer Simulator    │
-              │                            └────────┬────────┘
-              │                                     │
-              └──────────────────┬──────────────────┘
+                ┌────────────────┴────────────────┐
+                │                                 │
+        ┌───────▼────────┐               ┌────────▼────────┐
+        │   Classical    │               │     Quantum     │
+        │   Rule-Based   │               │  QAOA Controller│
+        │   Controller   │               │                  │
+        └───────┬────────┘               └────────┬─────────┘
+                │                                 │
+                │                         ┌───────▼─────────┐
+                │                         │   Traffic Cost  │
+                │                         │      Model      │
+                │                         └───────┬─────────┘
+                │                                 │
+                │                         ┌───────▼─────────┐
+                │                         │   QUBO Builder  │
+                │                         └───────┬─────────┘
+                │                                 │
+                │                         ┌───────▼─────────┐
+                │                         │   QUBO → Ising  │
+                │                         └───────┬─────────┘
+                │                                 │
+                │                         ┌───────▼─────────┐
+                │                         │  QAOA / Qiskit  │
+                │                         │  Aer Simulator   │
+                │                         └───────┬─────────┘
+                │                                 │
+                └────────────────┬────────────────┘
                                  │
                          ┌───────▼────────┐
-                         │ Traffic        │
-                         │ Simulation     │
+                         │    Traffic     │
+                         │   Simulation   │
                          └───────┬────────┘
                                  │
-                 ┌───────────────▼────────────────┐
-                 │ SUMO / TraCI + internal        │
-                 │ simulation infrastructure      │
-                 └────────────────────────────────┘
+                    ┌────────────▼─────────────┐
+                    │ SUMO / TraCI + Internal  │
+                    │ Simulation Infrastructure│
+                    └──────────────────────────┘
 ```
 
 ---
@@ -106,14 +106,12 @@ This gives **6 candidate configurations per intersection**.
 For \(N\) optimized intersections:
 
 $$
-6N
+N_{\text{variables}} = 6N
 $$
 
-binary optimization variables are generated.
+### Variable scaling
 
-For example:
-
-| Intersections | Binary variables |
+| Intersections | Binary Variables |
 | ------------: | ---------------: |
 |             1 |                6 |
 |             2 |               12 |
@@ -121,7 +119,7 @@ For example:
 |             4 |               24 |
 |             8 |               48 |
 
-### Exactly-one constraint
+### Exactly-One Constraint
 
 Each intersection must select exactly one phase-duration configuration:
 
@@ -135,7 +133,7 @@ $$
 \lambda\left(1-\sum_k x_{i,k}\right)^2
 $$
 
-so invalid multi-selection and zero-selection states receive a large penalty.
+This penalizes states in which an intersection selects either multiple configurations or none.
 
 ---
 
@@ -143,41 +141,39 @@ so invalid multi-selection and zero-selection states receive a large penalty.
 
 The cost model is designed to capture multiple traffic objectives rather than queue length alone.
 
-The current formulation includes components for:
-
-### Queue pressure
+### Queue Pressure
 
 Penalizes vehicles waiting on approaches affected by a candidate signal decision.
 
-### Waiting / delay
+### Waiting / Delay
 
 Penalizes accumulated waiting time.
 
 ### Congestion
 
-Uses normalized traffic density / queue pressure to discourage highly congested states.
+Uses normalized traffic density and queue pressure to discourage highly congested states.
 
-### Throughput reward
+### Throughput Reward
 
 Rewards candidate configurations that discharge more vehicles during the selected green interval.
 
-### Downstream congestion
+### Downstream Congestion
 
 Penalizes releasing traffic toward heavily congested downstream intersections.
 
-### Network coordination
+### Network Coordination
 
-Neighboring intersections receive quadratic coupling terms encouraging compatible signal phases and green-wave behavior.
+Neighboring intersections receive quadratic coupling terms encouraging compatible signal phases and coordinated traffic flow.
 
-### Phase switching stability
+### Phase Switching Stability
 
 A switching penalty discourages unnecessary changes from the current signal phase.
 
-### Emergency priority
+### Emergency Priority
 
 Emergency approaches receive additional priority, while candidate configurations that keep an emergency approach red receive penalties.
 
-### Emissions proxy
+### Emissions Proxy
 
 The optimization objective includes an emissions proxy based on traffic density, idling, and residual queues.
 
@@ -193,7 +189,7 @@ $$
 C(x)=x^TQx+c
 $$
 
-The system then performs the standard binary-to-spin transformation:
+The system then performs the binary-to-spin transformation:
 
 $$
 x_i = \frac{1-Z_i}{2}
@@ -210,30 +206,30 @@ $$
 
 The `IsingConverter` implementation preserves the objective equivalence between the QUBO and Ising representations for binary states.
 
-### QAOA pipeline
+### QAOA Pipeline
 
 ```text
 Traffic State
-     ↓
+      ↓
 Cost Model
-     ↓
+      ↓
 QUBO Matrix
-     ↓
+      ↓
 Ising Hamiltonian
-     ↓
-Initial |+⟩ state
-     ↓
-QAOA p-layer circuit
-     ↓
-Qiskit Aer simulation
-     ↓
-COBYLA parameter optimization
-     ↓
-Measurement sampling
-     ↓
-Feasibility checking
-     ↓
-Best valid signal configuration
+      ↓
+Initial |+⟩ State
+      ↓
+QAOA p-Layer Circuit
+      ↓
+Qiskit Aer Simulation
+      ↓
+COBYLA Parameter Optimization
+      ↓
+Measurement Sampling
+      ↓
+Feasibility Checking
+      ↓
+Best Valid Signal Configuration
 ```
 
 The current QAOA implementation supports configurable:
@@ -244,7 +240,7 @@ The current QAOA implementation supports configurable:
 * Maximum optimization iterations
 * Random seed
 
-The default research configuration used in the benchmark is:
+### Default Research Configuration
 
 ```text
 p = 1
@@ -264,11 +260,11 @@ The solver therefore:
 1. Evaluates sampled bitstrings.
 2. Checks one-hot feasibility for every intersection.
 3. Selects the lowest-cost feasible candidate.
-4. Falls back to a deterministic classical candidate generator if no feasible sampled bitstring is observed.
+4. Falls back to a deterministic classical candidate generator if no feasible bitstring is observed.
 
 This behavior is recorded in the returned `QAOAResult`.
 
-Relevant telemetry includes:
+### Recorded Telemetry
 
 * Selected bitstring
 * QUBO cost
@@ -286,7 +282,7 @@ Relevant telemetry includes:
 
 The repository contains two complementary simulation approaches.
 
-### 1. Internal deterministic simulator
+### 1. Internal Deterministic Simulator
 
 The `traffic_optimizer/simulation` package provides a lightweight traffic model for development and testing.
 
@@ -313,10 +309,10 @@ The integration layer supports:
 * Throughput measurement
 * Fuel and CO₂ telemetry
 * Emergency-vehicle injection
-* Congestion / incident events
+* Congestion and incident events
 * Simulation orchestration
 
-The bundled SUMO network contains a coordinated **2×2 intersection grid** using intersections:
+The bundled SUMO network contains a coordinated **2×2 intersection grid**:
 
 ```text
 I1 ─── I2
@@ -341,7 +337,7 @@ including a Manhattan-based road network and generated SUMO configuration files.
 
 The classical controller provides a non-quantum baseline based on traffic demand and urgency heuristics.
 
-It is intentionally kept separate from the quantum optimizer so the two approaches can be benchmarked under identical simulation conditions.
+It is intentionally separated from the quantum optimizer so the two approaches can be benchmarked under identical simulation conditions.
 
 ### Quantum QAOA Controller
 
@@ -447,8 +443,6 @@ For larger networks, optimization can be partitioned into smaller intersection g
 
 ### Requirements
 
-The project uses Python and the following major ecosystem components:
-
 * Python
 * NumPy
 * SciPy
@@ -465,8 +459,6 @@ Create a virtual environment:
 python -m venv .venv
 ```
 
-Activate it.
-
 ### Windows
 
 ```powershell
@@ -479,15 +471,15 @@ Activate it.
 source .venv/bin/activate
 ```
 
-Install the required Python packages according to the dependency configuration used for your local environment.
+Install the project's Python dependencies according to the dependency configuration in the repository.
 
-SUMO must also be installed separately and its executable directory made available to the system `PATH`.
+SUMO must also be installed separately and its executable directory must be available in the system `PATH`.
 
 ---
 
 ## Running the Project
 
-### Classical simulator demo
+### Classical Simulator
 
 ```bash
 python main.py
@@ -495,9 +487,7 @@ python main.py
 
 This launches the lightweight internal traffic simulation and demonstrates the classical controller.
 
----
-
-### Quantum demonstration
+### Quantum Demonstration
 
 ```bash
 python quantum_demo.py
@@ -505,15 +495,13 @@ python quantum_demo.py
 
 This demonstrates the QUBO → Ising → QAOA workflow.
 
----
-
-### Full SUMO benchmark
+### Full SUMO Benchmark
 
 ```bash
 python run_hackathon_demo.py
 ```
 
-The default benchmark compares:
+The benchmark compares:
 
 ```text
 Classical Rule-Based
@@ -523,32 +511,19 @@ Quantum QAOA
 
 under dynamic traffic events.
 
-Useful options include:
+Example:
 
 ```bash
-python run_hackathon_demo.py \
-    --steps 100 \
-    --interval 30 \
-    --shots 512 \
-    --maxiter 15 \
-    --quantum-intersections I1,I2
+python run_hackathon_demo.py --steps 100 --interval 30 --shots 512 --maxiter 15 --quantum-intersections I1,I2
 ```
 
-On Windows PowerShell, the same arguments can be supplied on one line.
-
----
-
 ### SUMO GUI
-
-To visualize the simulation:
 
 ```bash
 python run_hackathon_demo.py --gui
 ```
 
----
-
-### Streamlit dashboard
+### Streamlit Dashboard
 
 ```bash
 streamlit run dashboard.py
@@ -563,25 +538,21 @@ The dashboard provides visual inspection of:
 * QAOA parameters
 * Measurement distributions
 * Performance trajectories
-* Classical vs quantum comparison
+* Classical vs. quantum comparison
 
 ---
 
 ## Testing
 
-Run the complete test suite with:
+Run the complete test suite:
 
 ```bash
 pytest
 ```
 
-SUMO-dependent tests are marked separately:
+SUMO-dependent tests are marked separately using the `sumo` marker.
 
-```text
-sumo
-```
-
-The suite covers areas including:
+The test suite covers:
 
 * Intersection behavior
 * Road state
@@ -608,7 +579,7 @@ The documented evaluation uses:
 * Periodic optimization
 * Classical and QAOA controllers evaluated under the same simulated conditions
 
-The recorded metrics include:
+### Recorded Metrics
 
 | Category      | Metrics                                    |
 | ------------- | ------------------------------------------ |
@@ -631,7 +602,7 @@ benchmark_results.json
 
 ## Current Experimental Results
 
-The repository's documented benchmark does **not** demonstrate an operational quantum advantage on the tested CPU-based QAOA simulation.
+The documented benchmark does **not** demonstrate an operational quantum advantage on the tested CPU-based QAOA simulation.
 
 Across the documented 45 SUMO benchmark runs, the classical controller showed lower average waiting time and queue length, higher throughput, and lower computational overhead than the QAOA configuration used in the experiment.
 
@@ -639,7 +610,7 @@ The QAOA implementation nevertheless demonstrates several important engineering 
 
 * End-to-end QUBO construction
 * Constraint encoding
-* Exact QUBO → Ising conversion
+* QUBO → Ising conversion
 * Parameterized QAOA circuits
 * Classical parameter optimization
 * Feasibility checking
@@ -667,7 +638,7 @@ For this reason, the benchmark implementation partitions the network into smalle
 
 The documented experiments use groups of up to **3 intersections / 18 qubits** for QAOA simulation.
 
-The network-generation code itself is capable of constructing larger abstract grids, making it possible to investigate how the optimization formulation behaves as the network grows independently of the bundled SUMO scenario.
+The network-generation code can construct larger abstract grids, making it possible to investigate how the optimization formulation behaves as the network grows independently of the bundled SUMO scenario.
 
 ---
 
@@ -679,7 +650,7 @@ This repository is intended to support experimentation around questions such as:
 2. How should downstream congestion and neighboring intersections be coupled?
 3. How do emergency priorities alter the optimization landscape?
 4. How large can the QAOA problem become before classical simulation becomes impractical?
-5. How does QAOA behave when one-hot constraints are enforced only through penalties?
+5. How does QAOA behave when one-hot constraints are enforced through penalties?
 6. What trade-offs occur between queue reduction, throughput, emissions, and signal stability?
 7. What changes are required before the formulation can be meaningfully evaluated on real quantum hardware?
 
@@ -702,14 +673,14 @@ Current limitations include:
 
 ## Project Philosophy
 
-The goal is not to label an optimizer “quantum” and assume it is better.
+The goal is not to label an optimizer "quantum" and assume it is better.
 
 The project treats the quantum formulation as an engineering and research problem:
 
 ```text
-Real traffic problem
+Real Traffic Problem
         ↓
-Mathematical formulation
+Mathematical Formulation
         ↓
 Constrained QUBO
         ↓
@@ -721,7 +692,7 @@ Simulation
         ↓
 Benchmark
         ↓
-Failure analysis
+Failure Analysis
         ↓
 Iteration
 ```
@@ -743,21 +714,15 @@ Additional technical documentation:
 
 ---
 
-## License
-
-Add the project's intended license here before publishing the repository for external use.
-
----
-
 ## Acknowledgements
 
 This project builds on:
 
-* **Qiskit / Qiskit Aer** for quantum-circuit construction and simulation
-* **Eclipse SUMO** for microscopic traffic simulation
-* **TraCI** for programmatic SUMO control
-* **SciPy** for classical parameter optimization
-* **Streamlit** for interactive visualization
+* **Qiskit / Qiskit Aer** — quantum-circuit construction and simulation
+* **Eclipse SUMO** — microscopic traffic simulation
+* **TraCI** — programmatic SUMO control
+* **SciPy** — classical parameter optimization
+* **Streamlit** — interactive visualization
 
 ---
 
