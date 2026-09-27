@@ -147,4 +147,5 @@ Validation completed on the `quantum-optimization` branch:
 | **Average Delay per Vehicle** | 18.42s | 13.67s | **-25.8%** |
 | **Max Network Queue Length** | 42 vehicles | 26 vehicles | **-38.1%** |
 | **Throughput (Vehicles Cleared)** | 312 veh/hr | 389 veh/hr | **+24.7%** |
-| **Emergency Corridor Clearance Time**| 35.0s | 18.2s | **-48.0%** |
+| **Emergency Corridor Clearance Time**| 35.0s | 18.2s | **-48.0%** |#   q u a n t u m _ e n g i n e _ f o r _ t r a f f i c _ m a n a g e m e n t  
+ 
